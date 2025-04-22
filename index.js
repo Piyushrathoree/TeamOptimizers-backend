@@ -10,10 +10,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = [
-    "http://localhost:5000",
-    
-];
+const allowedOrigins = ["http://localhost:5000"];
 
 const corsOptions = {
     origin: (origin, callback) => {
@@ -33,13 +30,12 @@ app.use(bodyParser.json());
 // Connect to the database
 connectDB();
 
+app.get("/", (req, res) => {
+    res.send("<h1> server is running</h1>");
+});
 app.use("/api/auth", authRoutes);
 
-
 // Root route
-app.get("/", (req, res) => {
-    res.send("Server is in space");
-});
 
 const PORT = process.env.PORT;
 app.listen(PORT, () =>
