@@ -30,7 +30,7 @@ app.use(bodyParser.json());
 // Connect to the database
 connectDB();
 
-app.get("*", (req, res) => {
+app.get("/", (req, res) => {
     res.send("<h1> server is running</h1>");
 });
 app.use("/api/auth", authRoutes);
