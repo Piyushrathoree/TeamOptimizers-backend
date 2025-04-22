@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendForgetPassword } from "../utils/mail.js";
-import User from "../models/user.model.js";
+import User from "../middlewares/models/user.model.js";
 
 export const signup = async (req, res) => {
     const { email, phone, password, name} = req.body;
