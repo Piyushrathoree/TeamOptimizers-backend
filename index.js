@@ -9,8 +9,12 @@
     dotenv.config();
     const app = express();
 
-    // Middleware
-    const allowedOrigins = ["http://localhost:5000"];
+// Middleware
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    'https://team-optimizer.vercel.app'
+];
 
     const corsOptions = {
         origin: (origin, callback) => {
