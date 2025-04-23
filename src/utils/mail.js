@@ -1,41 +1,45 @@
 import axios from "axios";
 
-// Function to send the welcome email using the Brevo API
-
+// Function to send the password reset email using the Brevo API
 export const sendForgetPassword = async (email, otp) => {
-    const apiKey = process.env.MAIL_API; // Replace this with your actual API key
+    const apiKey = process.env.MAIL_API; // Your Brevo API Key
 
     const data = {
         sender: {
-            name: "Agro Galaxy",
+            name: "Mandi Mart",
             email: "meonpath008@gmail.com",
         },
         to: [
             {
                 email: email,
-                name: "Dear", // Optional: recipient's name, if available
+                name: "User",
             },
         ],
-        subject: "Reset Password!",
+        subject: "Mandi Mart - Password Reset Request",
         htmlContent: `
-      <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
-  <h2 style="color: #228B22;">Password Reset Request</h2>
-  <p>Dear Farmer,</p>
-  <p>We received a request to reset your password for your <strong>Agro Galaxy</strong> account. Use the One-Time Password (OTP) below to proceed with resetting your password:</p>
-  
-  <h3 style="color: #008000;">Your OTP: <strong>${otp}</strong></h3>
-  
-  <p>This OTP is valid for the next 10 minutes. If you did not request a password reset, please ignore this email or contact our support team immediately.</p>
-  
-  <p>To reset your password, click the following link and enter the OTP:  
-    <a href="https://agrogalaxy.com/reset-password" target="_blank" style="color: #006400; text-decoration: none; font-weight: bold;">Reset Password</a>
-  </p>
-  
-  <p>If you have any questions or need further assistance, feel free to reach out to our support team.</p>
-  
-  <p style="color: #228B22;">Best regards,<br>The Agro Galaxy Team</p>
+<div style="font-family: 'Segoe UI', sans-serif; background-color: #f9f9f9; padding: 20px; color: #333;">
+  <div style="max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <h2 style="color: #2E7D32; text-align: center;">Mandi Mart Password Reset</h2>
+    <p>Hi there,</p>
+    <p>We received a request to reset the password for your <strong>Mandi Mart</strong> account.</p>
+    <p>Please use the OTP below to proceed with the password reset:</p>
+    
+    <div style="background: #e8f5e9; padding: 15px; margin: 20px 0; border-left: 5px solid #4CAF50;">
+      <p style="font-size: 20px; color: #1b5e20; margin: 0;">Your OTP is: <strong>${otp}</strong></p>
+    </div>
+
+    <p>This OTP is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
+
+    <p>If you did not request a password reset, please ignore this email or contact our support team immediately.</p>
+
+    <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;" />
+    <p style="font-size: 14px; color: #777;">
+      Mandi Mart - Empowering Farmers, Connecting Markets.<br />
+      Need help? <a href="mailto:support@mandimart.in" style="color: #4CAF50;">Contact Support</a>
+    </p>
+  </div>
 </div>
-    `,
+        `
     };
 
     try {

@@ -4,32 +4,27 @@ import { sendForgetPassword } from "../utils/mail.js";
 import User from "../middlewares/models/user.model.js";
 
 export const signup = async (req, res) => {
-    const { email, phone, password, name} = req.body;
+    const { email, password, name, role } = req.body;
 
     try {
-        const existingUser = await User.findOne({
-            $or: [
-                email ? { email } : null,
-                phone ? { phone } : null,
-            ].filter(Boolean)
-        });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            if (existingUser.email === email) {
-                return res.status(400).json({ error: "Email is already in use" });
-            }
-            if (existingUser.phone === phone) {
-                return res.status(400).json({ error: "Phone number is already in use" });
-            }
+            return res.status(400).json({ error: "Email is already in use" });
+        }
+
+        // Validate role if provided, otherwise default will be used
+        if (role && !['user', 'buyer', 'admin'].includes(role)) {
+            return res.status(400).json({ error: "Invalid role specified" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        const newUserData = { password: hashedPassword, name, role };
-        if (email) newUserData.email = email;
-        if (phone) newUserData.phone = phone;
-
-        const newUser = new User(newUserData);
+        const newUser = new User({
+            email,
+            password: hashedPassword,
+            name,
+            ...(role && { role }) // Only include role if provided
+        });
 
         await newUser.save();
 
@@ -39,42 +34,33 @@ export const signup = async (req, res) => {
             { expiresIn: "96h" }
         );
 
-        const userResponse = {
-            id: newUser._id,
-            name: newUser.name,
-            role: newUser.role,
-        };
-
-        if (newUser.email) userResponse.email = newUser.email;
-        if (newUser.phone) userResponse.phone = newUser.phone;
-
         res.status(201).json({
             token,
-            user: userResponse,
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role
+            }
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({
+            error: "Internal Server Error",
+            message: error.message
+        });
     }
 };
 
 export const login = async (req, res) => {
-    const { email, phone, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        if (!email && !phone) {
-            return res.status(400).json({ error: "Email or Phone must be provided" });
+        if (!email) {
+            return res.status(400).json({ error: "Email must be provided" });
         }
 
-        let query = {};
-        if (email) {
-            query.email = email;
-        }
-        if (phone) {
-            query.phone = phone;
-        }
-
-        const user = await User.findOne(query);
+        const user = await User.findOne({ email });
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(400).json({ error: "Invalid credentials" });
@@ -86,18 +72,14 @@ export const login = async (req, res) => {
             { expiresIn: "96h" }
         );
 
-        const userResponse = {
-            id: user._id,
-            name: user.name,
-            role: user.role,
-        };
-
-        if (user.email) userResponse.email = user.email;
-        if (user.phone) userResponse.phone = user.phone;
-
         res.status(200).json({
             token,
-            user: userResponse,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
     } catch (error) {
         console.error(error);
@@ -107,27 +89,27 @@ export const login = async (req, res) => {
 
 // Forgot Password function
 export const forgotPassword = async (req, res) => {
-    const { email } = req.body; // Only use email for reset
+    const { email } = req.body;
 
-    // Check if email is provided
     if (!email) {
         return res.status(400).json({ error: "Email is required for password reset" });
     }
 
     try {
-        const user = await User.findOne({ email }); // Search by email only
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ error: "User with this email does not exist" });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000);
         user.resetPasswordToken = otp;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiration
+        user.resetPasswordExpires = Date.now() + 600000; // 10 minutes expiration
 
         await user.save();
-        await sendForgetPassword(email, otp); // Send OTP to email
+        await sendForgetPassword(email, otp);
         res.status(200).json({ message: "OTP sent to your email" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Something went wrong, please try again later." });
     }
 };
@@ -136,7 +118,6 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
-    // Validate required fields
     if (!email || !otp || !newPassword) {
         return res.status(400).json({ error: "Email, OTP, and new password are required" });
     }
@@ -145,22 +126,19 @@ export const resetPassword = async (req, res) => {
         const user = await User.findOne({
             email,
             resetPasswordToken: otp,
-            resetPasswordExpires: { $gt: Date.now() }, // OTP should be valid
+            resetPasswordExpires: { $gt: Date.now() }
         });
 
         if (!user) {
             return res.status(400).json({ error: "Invalid or expired OTP" });
         }
 
-        // Hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedPassword;
-
-        // Remove reset token fields
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
-
         await user.save();
+
         res.status(200).json({ message: "Password reset successfully" });
     } catch (error) {
         console.error("Reset Password Error:", error);

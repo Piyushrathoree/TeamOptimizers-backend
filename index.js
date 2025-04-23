@@ -11,8 +11,9 @@ const app = express();
 
 // Middleware
 const allowedOrigins = [
-    "http://localhost:5000",
-    
+    "http://localhost:3000",
+    "http://localhost:3001",
+    'https://team-optimizer.vercel.app'
 ];
 
 const corsOptions = {
